@@ -1,88 +1,62 @@
 ---
 title: "Time"
-description: "Text, title, and styling in standard markdown"
+description: "Use useTimestamp as the single source of truth for time"
 icon: "clock"
 ---
 
-## Titles
+Time in quantform must stay consistent across live execution and replay. If you mix wall-clock time with simulated backtest time, logs, ordering, and signals will disagree with what actually happened in the run.
 
-Best used for section headers.
+## Single source of truth: `useTimestamp`
 
-```md
-## Titles
+`useTimestamp` is the hook you should use whenever you need “now” inside strategy or adapter code that runs in both real environments and replay.
+
+- **Live and paper** - returns wall-clock time (`Date.now()`), aligned with real execution.
+- **Replay (backtest)** - returns the **current replay clock**: the timestamp advanced by the replay scheduler as historical samples are processed, aligned to your backtest window and event order.
+
+That means during backtest, `useTimestamp` does **not** return the real wall clock. It returns the simulated time for the **sample currently being handled**, so logging, correlation IDs, and any logic that branches on “current time” stay coherent with the replayed data.
+
+## Why not use `Date.now()` directly?
+
+Using `Date.now()` or `new Date()` for strategy decisions or event tagging breaks replay:
+
+- In replay, events happened in the past; wall clock is unrelated to the backtest period.
+- You get inconsistent ordering, misleading logs, and logic that behaves differently in replay vs live.
+
+Reserve raw `Date.now()` for code that truly must know the wall clock (for example diagnostics outside the strategy pipeline). For anything that participates in **strategy semantics** or **event correlation**, use `useTimestamp`.
+
+## What Core already does
+
+Several helpers attach timestamps using `useTimestamp` so downstream code stays consistent:
+
+- `useLogger` prefixes log lines with a time derived from `useTimestamp`
+- `withRequest` and WebSocket helpers tag responses with `useTimestamp()`
+
+Following the same rule in your components keeps your custom streams aligned.
+
+## Practical pattern
+
+When you emit or transform events, prefer tagging with the replay-aware clock when the event is produced in your pipeline:
+
+```ts
+import { map } from 'rxjs';
+import { useTimestamp } from '@quantform/core';
+
+export function withEventTime<T>(source: Observable<T>) {
+  return source.pipe(map(payload => ({ timestamp: useTimestamp(), payload })));
+}
 ```
 
-### Subtitles
+When an external feed already includes a trusted exchange timestamp, you can keep that field for market semantics and still use `useTimestamp` for “when this was observed in the run” if you need both.
 
-Best used for subsection headers.
+## Summary
 
-```md
-### Subtitles
-```
+| Context        | What `useTimestamp` returns        |
+| -------------- | ---------------------------------- |
+| Live / paper   | Wall-clock milliseconds (`Date.now()`) |
+| Replay         | Current replay time, aligned to the backtest stream |
 
-<Tip>
-  Each **title** and **subtitle** creates an anchor and also shows up on the table of contents on the right.
-</Tip>
+Use **`useTimestamp` everywhere strategy-relevant time matters** so live and replay stay comparable and your backtest period is reflected correctly in time-based logic.
 
-## Text formatting
-
-We support most markdown formatting. Simply add `**`, `_`, or `~` around text to format it.
-
-| Style | How to write it | Result |
-| --- | --- | --- |
-| Bold | `**bold**` | **bold** |
-| Italic | `_italic_` | _italic_ |
-| Strikethrough | `~strikethrough~` | ~~strikethrough~~ |
-
-You can combine these. For example, write `**_bold and italic_**` to get **_bold and italic_** text.
-
-You need to use HTML to write superscript and subscript text. That is, add `<sup>` or `<sub>` around your text.
-
-| Text Size | How to write it | Result |
-| --- | --- | --- |
-| Superscript | `<sup>superscript</sup>` | <sup>superscript</sup> |
-| Subscript | `<sub>subscript</sub>` | <sub>subscript</sub> |
-
-## Linking to pages
-
-You can add a link by wrapping text in `[]()`. You would write `[link to google](https://google.com)` to [link to google](https://google.com).
-
-Links to pages in your docs need to be root-relative. Basically, you should include the entire folder path. For example, `[link to text](/writing-content/text)` links to the page "Text" in our components section.
-
-Relative links like `[link to text](../text)` will open slower because we cannot optimize them as easily.
-
-## Blockquotes
-
-### Singleline
-
-To create a blockquote, add a `>` in front of a paragraph.
-
-> Dorothy followed her through many of the beautiful rooms in her castle.
-
-```md
-> Dorothy followed her through many of the beautiful rooms in her castle.
-```
-
-### Multiline
-
-> Dorothy followed her through many of the beautiful rooms in her castle.
->
-> The Witch bade her clean the pots and kettles and sweep the floor and keep the fire fed with wood.
-
-```md
-> Dorothy followed her through many of the beautiful rooms in her castle.
->
-> The Witch bade her clean the pots and kettles and sweep the floor and keep the fire fed with wood.
-```
-
-### LaTeX
-
-Mintlify supports [LaTeX](https://www.latex-project.org) through the Latex component.
-
-<Latex>
-  8 x (vk x H1 - H2) = (0,1)
-</Latex>
-
-```md
-<Latex>8 x (vk x H1 - H2) = (0,1)</Latex>
-```
+<Card title="Replay workflow" icon="clock-rotate-left" href="/guides/replay-workflow">
+  See how replay windows and storage interact with scheduled time.
+</Card>

@@ -1,5 +1,94 @@
 ---
 title: 'Composition'
+description: "Compose strategies from dependencies"
 icon: "puzzle-piece"
 ---
 
+Register dependencies once (options, storages, custom services) and consume them anywhere in your strategy tree without threading parameters through every function.
+
+## Registering dependencies
+
+Dependencies are plain objects with a `provide` token and either `useValue` or `useClass`:
+
+```ts
+import { Dependency } from '@quantform/core';
+
+const MyConfig = Symbol('my-config');
+
+export function myConfigOptions(config: { apiUrl: string }): Dependency {
+  return {
+    provide: MyConfig,
+    useValue: config
+  };
+}
+```
+
+Return them from your `strategy(() => [...])` array (and merge with adapter packages):
+
+```ts
+import { EMPTY } from 'rxjs';
+import { behavior, strategy, useContext } from '@quantform/core';
+
+const MyConfig = Symbol('my-config');
+
+export default strategy(() => {
+  behavior(() => {
+    const cfg = useContext<{ apiUrl: string }>(MyConfig);
+    // ...
+    return EMPTY;
+  });
+
+  return [myConfigOptions({ apiUrl: 'https://api.example.com' })];
+});
+```
+
+Core registers defaults via `core()`; your entries extend or override that graph.
+
+## Pattern: token + hook + options
+
+Built-in hooks follow the same shape: a private `Symbol`, a hook that calls `useContext`, and an `options` helper that returns a `Dependency`:
+
+```ts
+import { Dependency, useContext } from '@quantform/core';
+
+const MyService = Symbol('my-service');
+
+export interface MyServiceApi {
+  fetchBalance(): Promise<number>;
+}
+
+export function useMyService() {
+  return useContext<MyServiceApi>(MyService);
+}
+
+useMyService.options = (impl: MyServiceApi): Dependency => ({
+  provide: MyService,
+  useValue: impl
+});
+```
+
+Consumers import `useMyService()` in `behavior` / components; wiring happens in the strategy’s dependency list.
+
+## Rules of thumb
+
+- Call `useContext` only from code that runs **inside** the module context (strategy hooks, helpers invoked from there).
+- Do not call it from top-level module scope or from random timers unless that code was scheduled from within `act`.
+- Prefer **symbols** or stable object tokens for `provide` to avoid collisions across packages.
+
+## `throwWithContext`
+
+`throwWithContext()` throws if a module context **is** active. Use it to guard code paths that must **not** run under DI (for example utilities that should stay free of hooks).
+
+## How this fits composition
+
+| Layer | Role |
+| ----- | ---- |
+| `Dependency[]` | Declares what the run needs |
+| `useContext` | Reads those bindings inside hooks |
+| RxJS `pipe` / `combineLatest` | Composes event logic |
+
+Together, dependency injection composes **services and config**, while observables compose **data flow**. Use both so strategies stay modular and testable.
+
+<Card title="Runtime model" icon="layer-group" href="/concepts/runtime-model">
+  Read more about `Module`, `awake`, and `act`.
+</Card>
