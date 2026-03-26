@@ -19,7 +19,7 @@
         ]
       },
       {
-        "group": "Core Concept",
+        "group": "Fundamentals",
         "pages": [
           "essentials/markdown",
           "essentials/dependency-injection",
@@ -36,11 +36,10 @@
         ]
       },
       {
-        "group": "Example",
+        "group": "Strategies",
         "pages": [
           "ai-tools/cursor",
-          "ai-tools/claude-code",
-          "ai-tools/windsurf"
+          "ai-tools/claude-code"
         ]
       }
     ]
