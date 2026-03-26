@@ -1,60 +1,100 @@
 ---
-title: "Hello world"
-description: "Event-driven automation runtime for financial markets and protocols."
+title: "Hello World"
+description: "Install Quantform Core and execute your first reusable strategy component."
 ---
 
-It's is an event-driven, composable runtime that models markets and protocols as deterministic streams and executes reactive backtesting-to-live workflows through reusable, environment-agnostic components.
+This tutorial walks you through:
 
-## Your strategy, your control
+1. Installing `@quantform/core`
+2. Creating a basic reusable component
+3. Wiring it into a strategy
+4. Executing it with the Quantform CLI
 
-A developer-first runtime with full control over execution:
+## Prerequisites
 
-- **You own the logic** - decisions are defined by your code,
-- **You choose the mode** - run in `paper`, `replay`, or `live`,
-- **You compose strategies** - reusable, reactive components,
-- **You keep one codebase** - promote the same code from test to production.
+- Node.js and Yarn installed
+- A new or existing TypeScript project
 
-<CardGroup cols={2}>
-  <Card title="Execution" icon="toggle-on" href="/guides/execution-modes">
-    Learn when to use `paper`, `replay`, and `live` modes.
-  </Card>
-  <Card title="Replay workflow" icon="clock-rotate-left" href="/guides/replay-workflow">
-    Validate behavior on historical windows before production.
-  </Card>
-</CardGroup>
+## Step 1: Install packages
 
-## What you can build
+```bash
+yarn add @quantform/core rxjs
+```
 
-With quantform, you can build:
+Create a `src` directory if you do not already have one.
 
-- Systematic strategies across spot, derivatives, and multiple venues,
-- Execution systems with dynamic routing based on market conditions,
-- Automate workflows for portfolio, position, and risk management
-- Integrate with DeFi protocols for on-chain operations and trigger-based actions
-- Create real-time monitoring pipelines that detect events and respond programmatically
+## Step 2: Create a basic component
 
-<Warning>
-  quantform is an execution framework, not a profit guarantee. Always test in `paper` and `replay` modes before running any live strategy.
-</Warning>
+Create `src/components/tick-logger.ts`:
 
-## What this means in practice
+```ts
+import { interval, map, tap } from 'rxjs';
+import { useLogger } from '@quantform/core';
 
-Quantform turns market and protocol activity into event streams, so your automation can react to data in real time with deterministic behavior in testing.
+/**
+ * Basic reusable component:
+ * emits one tick event per second and logs it.
+ */
+export function useTickLogger(label: string) {
+  const { info } = useLogger('tick-logger');
 
-- **Works across venues and protocols** - connect centralized exchanges, DeFi protocols, and wallets in one system.
-- **Real-time by default** - react when market state changes, not through slow polling loops.
-- **One strategy, multiple environments** - run the same strategy in replay, paper, and live modes.
-- **Built for full automation** - automate more than orders, including rebalancing and execution workflows.
+  return interval(1000).pipe(
+    map(i => ({ timestamp: Date.now(), label, tick: i })),
+    tap(event => info(`[${event.label}] tick=${event.tick}`))
+  );
+}
+```
 
-## Getting started
+## Step 3: Use the component in a strategy
 
-Ready to build your first strategy?
+Create `src/pipeline.ts`:
+
+```ts
+import { behavior, strategy } from '@quantform/core';
+import { useTickLogger } from './components/tick-logger';
+
+export default strategy(() => {
+  behavior(() => useTickLogger('basic-component'));
+
+  return [];
+});
+```
+
+This keeps your strategy small while moving reusable logic into a component.
+
+## Step 4: Execute the strategy
+
+Run in paper mode:
+
+```bash
+qf paper pipeline
+```
+
+You should see a log line every second from `useTickLogger`.
+
+## Step 5: Iterate quickly
+
+Use watch mode while developing:
+
+```bash
+qf paper pipeline -w
+```
+
+The process restarts when files in `src` change.
+
+## Next steps
 
 <CardGroup cols={2}>
   <Card title="Execution modes" icon="toggle-on" href="/guides/execution-modes">
-    Learn when to use `paper`, `replay`, `live`, and `idle`.
+    Learn when to use paper, replay, and live runs.
   </Card>
-  <Card title="Overview page" icon="book-open" href="/getting-started/overview">
-    Explore the full documentation map and starter examples.
+  <Card title="Replay workflow" icon="clock-rotate-left" href="/guides/replay-workflow">
+    Validate strategy behavior with historical windows.
+  </Card>
+  <Card title="Runtime model" icon="layer-group" href="/concepts/runtime-model">
+    Understand modules, hooks context, and dependency wiring.
+  </Card>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Compare this tutorial with the shorter quickstart path.
   </Card>
 </CardGroup>
