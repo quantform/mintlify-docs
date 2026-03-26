@@ -1,27 +1,41 @@
 ---
-title: "ELI5"
+title: "Hello world"
 description: "Event-driven automation runtime for financial markets and protocols."
 ---
 
-It's is an event-driven, composable runtime that models markets and protocols as deterministic streams and executes reactive backtesting-to-live strategy workflows through reusable, environment-agnostic components.
+It's is an event-driven, composable runtime that models markets and protocols as deterministic streams and executes reactive backtesting-to-live workflows through reusable, environment-agnostic components.
 
 ## Your strategy, your control
 
-Quantform Core follows a developer-controlled model:
+A developer-first runtime with full control over execution:
 
-- **You own the logic** - Strategy decisions are defined by your code
-- **You choose the mode** - Run in `paper`, `replay`, `live`, or `idle`
-- **You inspect behavior** - Use logging and deterministic replay windows
-- **You keep one codebase** - Promote the same strategy from test to production
+- **You own the logic** - decisions are defined by your code,
+- **You choose the mode** - run in `paper`, `replay`, or `live`,
+- **You compose strategies** - reusable, reactive components,
+- **You keep one codebase** - promote the same code from test to production.
 
 <CardGroup cols={2}>
-  <Card title="Execution modes" icon="toggle-on" href="/guides/execution-modes">
-    Learn when to use `paper`, `replay`, `live`, and `idle`.
+  <Card title="Execution" icon="toggle-on" href="/guides/execution-modes">
+    Learn when to use `paper`, `replay`, and `live` modes.
   </Card>
   <Card title="Replay workflow" icon="clock-rotate-left" href="/guides/replay-workflow">
     Validate behavior on historical windows before production.
   </Card>
 </CardGroup>
+
+## What you can build
+
+With quantform, you can build:
+
+- Systematic strategies across spot, derivatives, and multiple venues,
+- Execution systems with dynamic routing based on market conditions,
+- Automate workflows for portfolio, position, and risk management
+- Integrate with DeFi protocols for on-chain operations and trigger-based actions
+- Create real-time monitoring pipelines that detect events and respond programmatically
+
+<Warning>
+  quantform is an execution framework, not a profit guarantee. Always test in `paper` and `replay` modes before running any live strategy.
+</Warning>
 
 ## What this means in practice
 
@@ -32,54 +46,13 @@ Quantform turns market and protocol activity into event streams, so your automat
 - **One strategy, multiple environments** - run the same strategy in replay, paper, and live modes.
 - **Built for full automation** - automate more than orders, including rebalancing and execution workflows.
 
-<Warning>
-  Quantform Core is an execution framework, not a profit guarantee. Always test in `paper` and `replay` modes before running any live strategy.
-</Warning>
-
-## What you can build
-
-With Quantform Core, you can build:
-
-- Systematic trading strategies for spot, derivatives, and multi-venue setups
-- Cross-market execution that routes orders based on spread, depth, or fees
-- DeFi automation like position management and trigger-based operations
-- Monitoring and response pipelines that detect events and execute actions
-
-## How it works
-
-1. Connect data sources (prices, orderbooks, protocol events).
-2. Compose strategy logic as reactive pipelines.
-3. Attach execution adapters to place orders or transactions.
-4. Run in replay or paper mode for validation, then promote to live.
-5. Reuse the same strategy core while swapping runtime dependencies.
-
-## Simple mental model
-
-- **Strategy code** = your rules
-- **Runtime** = the engine executing those rules
-- **Adapters/connectors** = data + execution bridges
-- **Modes** = testing path (`replay`/`paper`) and production path (`live`)
-
-## What Quantform Core is not
-
-- Not an exchange
-- Not a profit guarantee
-- Not a replacement for risk management
-- Not limited to one venue or one strategy style
-
 ## Getting started
 
 Ready to build your first strategy?
 
 <CardGroup cols={2}>
-  <Card title="Quickstart guide" icon="rocket" href="/quickstart">
-    Set up your project and run your first strategy in minutes.
-  </Card>
   <Card title="Execution modes" icon="toggle-on" href="/guides/execution-modes">
     Learn when to use `paper`, `replay`, `live`, and `idle`.
-  </Card>
-  <Card title="Replay workflow" icon="clock-rotate-left" href="/guides/replay-workflow">
-    Validate behavior on historical windows before production.
   </Card>
   <Card title="Overview page" icon="book-open" href="/getting-started/overview">
     Explore the full documentation map and starter examples.
