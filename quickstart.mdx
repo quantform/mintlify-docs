@@ -15,6 +15,24 @@ This tutorial walks you through:
 - Node.js and Yarn installed
 - A new or existing TypeScript project
 
+```ts
+/*
+ * Combines funding rates from multiple venues into a single stream 
+ * and computes the funding fee premium between them.
+ */
+export function watchFundingPremium(symbol = 'SOL') {
+  const { watchHyperliquidFundingFee } = useHyperliquid();
+  const { watchBackpackFundingFee } = useBackpack();
+
+  return combineLatest([
+    watchHyperliquidFundingFee(symbol),
+    watchBackpackFundingFee(`${symbol}_USD_PERP`),
+  ]).pipe(
+    map(([hl, bp]) => hl.rate - bp.rate)
+  );
+}
+```
+
 ## Step 1: Install packages
 
 ```bash

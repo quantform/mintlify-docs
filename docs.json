@@ -20,7 +20,7 @@
         ]
       },
       {
-        "group": "Customization",
+        "group": "Core Concept",
         "pages": [
           "essentials/settings",
           "essentials/navigation"
@@ -52,14 +52,14 @@
   "navbar": {
     "links": [
       {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
+        "label": "GitHub",
+        "href": "https://github.com/quantform/quantform"
       }
     ],
     "primary": {
       "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
+      "label": "GitHub",
+      "href": "https://github.com/quantform/quantform"
     }
   },
   "contextual": {
