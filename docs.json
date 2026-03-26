@@ -15,8 +15,7 @@
         "group": "Getting started",
         "pages": [
           "index",
-          "quickstart",
-          "development"
+          "quickstart"
         ]
       },
       {
@@ -37,7 +36,7 @@
         ]
       },
       {
-        "group": "AI tools",
+        "group": "Example",
         "pages": [
           "ai-tools/cursor",
           "ai-tools/claude-code",
