@@ -20,7 +20,7 @@
         ]
       },
       {
-        "group": "Fundamental Concept",
+        "group": "Core Concept",
         "pages": [
           "essentials/markdown",
           "essentials/dependency-injection",
