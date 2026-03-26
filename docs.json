@@ -20,8 +20,10 @@
         ]
       },
       {
-        "group": "Core Concept",
+        "group": "Fundamental Concept",
         "pages": [
+          "essentials/markdown",
+          "essentials/dependency-injection",
           "essentials/settings",
           "essentials/navigation"
         ]
@@ -29,7 +31,6 @@
       {
         "group": "Workflow",
         "pages": [
-          "essentials/markdown",
           "essentials/code",
           "essentials/images",
           "essentials/reusable-snippets"
