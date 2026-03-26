@@ -1,80 +1,87 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: "ELI5"
+description: "Event-driven automation runtime for financial markets and protocols."
 ---
 
-## Get started in three steps
+It's is an event-driven, composable runtime that models markets and protocols as deterministic streams and executes reactive backtesting-to-live strategy workflows through reusable, environment-agnostic components.
 
-Get your documentation site running locally and make your first customization.
+## Your strategy, your control
 
-### Step 1: Set up your local environment
+Quantform Core follows a developer-controlled model:
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 2: Deploy your changes
-
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
-
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
-
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 3: Go live
-
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
-
-## Next steps
-
-Now that you have your docs running, explore these key features:
+- **You own the logic** - Strategy decisions are defined by your code
+- **You choose the mode** - Run in `paper`, `replay`, `live`, or `idle`
+- **You inspect behavior** - Use logging and deterministic replay windows
+- **You keep one codebase** - Promote the same strategy from test to production
 
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="Execution modes" icon="toggle-on" href="/guides/execution-modes">
+    Learn when to use `paper`, `replay`, `live`, and `idle`.
+  </Card>
+  <Card title="Replay workflow" icon="clock-rotate-left" href="/guides/replay-workflow">
+    Validate behavior on historical windows before production.
+  </Card>
 </CardGroup>
 
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>
+## What this means in practice
+
+Quantform turns market and protocol activity into event streams, so your automation can react to data in real time with deterministic behavior in testing.
+
+- **Works across venues and protocols** - connect centralized exchanges, DeFi protocols, and wallets in one system.
+- **Real-time by default** - react when market state changes, not through slow polling loops.
+- **One strategy, multiple environments** - run the same strategy in replay, paper, and live modes.
+- **Built for full automation** - automate more than orders, including rebalancing and execution workflows.
+
+<Warning>
+  Quantform Core is an execution framework, not a profit guarantee. Always test in `paper` and `replay` modes before running any live strategy.
+</Warning>
+
+## What you can build
+
+With Quantform Core, you can build:
+
+- Systematic trading strategies for spot, derivatives, and multi-venue setups
+- Cross-market execution that routes orders based on spread, depth, or fees
+- DeFi automation like position management and trigger-based operations
+- Monitoring and response pipelines that detect events and execute actions
+
+## How it works
+
+1. Connect data sources (prices, orderbooks, protocol events).
+2. Compose strategy logic as reactive pipelines.
+3. Attach execution adapters to place orders or transactions.
+4. Run in replay or paper mode for validation, then promote to live.
+5. Reuse the same strategy core while swapping runtime dependencies.
+
+## Simple mental model
+
+- **Strategy code** = your rules
+- **Runtime** = the engine executing those rules
+- **Adapters/connectors** = data + execution bridges
+- **Modes** = testing path (`replay`/`paper`) and production path (`live`)
+
+## What Quantform Core is not
+
+- Not an exchange
+- Not a profit guarantee
+- Not a replacement for risk management
+- Not limited to one venue or one strategy style
+
+## Getting started
+
+Ready to build your first strategy?
+
+<CardGroup cols={2}>
+  <Card title="Quickstart guide" icon="rocket" href="/quickstart">
+    Set up your project and run your first strategy in minutes.
+  </Card>
+  <Card title="Execution modes" icon="toggle-on" href="/guides/execution-modes">
+    Learn when to use `paper`, `replay`, `live`, and `idle`.
+  </Card>
+  <Card title="Replay workflow" icon="clock-rotate-left" href="/guides/replay-workflow">
+    Validate behavior on historical windows before production.
+  </Card>
+  <Card title="Overview page" icon="book-open" href="/getting-started/overview">
+    Explore the full documentation map and starter examples.
+  </Card>
+</CardGroup>

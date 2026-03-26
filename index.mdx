@@ -1,97 +1,91 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "Getting Started"
+description: "Build algorithmic trading workflows with Quantform Core."
 ---
 
-## Setting up
+# Quantform Documentation
 
-Get your documentation site up and running in minutes.
+Build with Quantform Core. Runtime tools, execution workflows, and guides for systematic trading developers.
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
+## Developer quickstart
+
+Make your first strategy run in minutes. Learn the Quantform runtime basics, process event streams, and validate behavior with replay windows.
+
+<Card title="Get started" icon="arrow-right" href="/quickstart">
+  Get Started ->
 </Card>
 
-## Make it yours
+<CodeGroup>
+```ts TypeScript
+import { behavior, strategy, useExecutionMode, useLogger } from '@quantform/core';
+import { interval, map, tap } from 'rxjs';
 
-Design a docs site that looks great and empowers your users.
+export default strategy(() => {
+  behavior(() => {
+    const { isReplay } = useExecutionMode();
+    const { info } = useLogger('quickstart');
 
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
-  </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
-  </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
-  </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
-  </Card>
-</Columns>
+    return interval(1000).pipe(
+      map(i => ({ timestamp: Date.now(), tick: i, mode: isReplay ? 'replay' : 'runtime' })),
+      tap(event => info(`${event.mode} tick=${event.tick}`))
+    );
+  });
 
-## Create beautiful pages
+  return [];
+});
+```
 
-Everything you need to create world-class documentation.
+```js JavaScript
+const { behavior, strategy, useLogger } = require('@quantform/core');
+const { interval, map, tap } = require('rxjs');
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+module.exports = strategy(() => {
+  behavior(() => {
+    const { info } = useLogger('quickstart');
+    return interval(1000).pipe(
+      map(i => ({ timestamp: Date.now(), tick: i })),
+      tap(event => info(`tick=${event.tick}`))
+    );
+  });
+  return [];
+});
+```
 
-## Need inspiration?
+```bash CLI
+qf paper pipeline
+qf replay pipeline --from 2025-01-01 --to 2025-01-03
+```
+</CodeGroup>
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+## Get familiar with Quantform Core
+
+Learn the fundamentals, explore strategy workflows, and scale from local experiments to live execution.
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Set up your environment and make your first runtime execution.
+  </Card>
+  <Card title="Core concepts" icon="layer-group" href="/concepts/runtime-model">
+    Understand module context, strategy lifecycle, and market primitives.
+  </Card>
+  <Card title="Execution guides" icon="toggle-on" href="/guides/execution-modes">
+    Compare live, paper, replay, and idle modes with practical run patterns.
+  </Card>
+  <Card title="Engineering utilities" icon="toolbox" href="/guides/observability-and-utilities">
+    Use logging, requests, sockets, and operators in production pipelines.
+  </Card>
+</CardGroup>
+
+## Builder program
+
+<CardGroup cols={3}>
+  <Card title="Builder track" icon="screwdriver-wrench" href="/development">
+    Follow an end-to-end workflow from local build to mode-specific execution.
+  </Card>
+  <Card title="Help desk" icon="life-ring" href="https://github.com/quantform/quantform/issues">
+    Get support, report issues, and find answers in the Quantform repository.
+  </Card>
+  <Card title="Status" icon="activity" href="https://www.npmjs.com/package/@quantform/core">
+    Track package versions and release health for `@quantform/core`.
+  </Card>
+</CardGroup>
