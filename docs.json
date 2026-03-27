@@ -8,7 +8,10 @@
     "dark": "#03D0EB"
   },
   "anchor": false,
-  "favicon": "/images/quantform.svg",
+  "favicon": {
+    "light": "/images/favicon.ico",
+    "dark": "/images/favicon.ico"
+  },
   "navigation": {
     "groups": [
       {
@@ -82,5 +85,6 @@
   },
   "appearance": {
     "default": "dark"
-  }
+  },
+  "description": "Event-driven automation runtime for financial markets and protocols."
 }
