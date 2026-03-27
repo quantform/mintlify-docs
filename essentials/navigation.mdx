@@ -1,87 +1,107 @@
 ---
 title: 'Execution'
-description: 'The navigation field in docs.json defines the pages that go in the navigation menu'
+description: 'Execution mode defines runtime semantics for strategy behavior, timestamps, storage usage, and execution side effects.'
 icon: 'bolt'
 ---
 
-The navigation menu is the list of links on every website.
+Use one strategy shape and choose the mode based on where you are in the development lifecycle.
 
-You will likely update `docs.json` every time you add a new page. Pages do not show up automatically.
+## Modes at a glance
 
-## Navigation syntax
+| Mode | Purpose | Typical use |
+| ---- | ------- | ----------- |
+| `paper` | Simulation with live-like runtime flow | Validate logic against current market streams without real execution |
+| `replay` | Historical backtest flow | Deterministic strategy verification on a fixed time window |
+| `live` | Production execution | Real order/transaction execution after validation |
 
-Our navigation syntax is recursive which means you can make nested navigation groups. You don't need to include `.mdx` in page names.
+## Runtime API
 
-<CodeGroup>
+Use `useExecutionMode()` to inspect the active mode:
 
-```json Regular Navigation
-"navigation": {
-  "tabs": [
-    {
-      "tab": "Docs",
-      "groups": [
-        {
-          "group": "Getting Started",
-          "pages": ["quickstart"]
-        }
-      ]
-    }
-  ]
-}
+```ts
+const { isReplay, isSimulation } = useExecutionMode();
 ```
 
-```json Nested Navigation
-"navigation": {
-  "tabs": [
-    {
-      "tab": "Docs",
-      "groups": [
-        {
-          "group": "Getting Started",
-          "pages": [
-            "quickstart",
-            {
-              "group": "Nested Reference Pages",
-              "pages": ["nested-reference-page"]
-            }
-          ]
-        }
-      ]
-    }
-  ]
-}
+- `isSimulation` is `true` for non-live modes
+- `recording` is configured through CLI mode options for `paper` and `live`
+
+## CLI commands
+
+- `qf paper <strategy>`
+- `qf replay <strategy> --from <date> --to <date>`
+- `qf live <strategy>`
+
+All commands load the same strategy module and inject mode-specific dependencies.
+
+## Paper mode
+
+Use `paper` when strategy logic is still evolving and you want real-time behavior without real capital impact.
+
+Typical characteristics:
+
+- live-like event flow
+- simulated execution paths
+- optional recording for diagnostics (`--recording`)
+
+```bash
+qf paper pipeline --id paper-sol-v1 --recording
 ```
 
-</CodeGroup>
+## Replay mode
 
-## Folders
+Use `replay` for deterministic backtesting over a fixed period.
 
-Simply put your MDX files in folders and update the paths in `docs.json`.
+Replay characteristics:
 
-For example, to have a page at `https://yoursite.com/your-folder/your-page` you would make a folder called `your-folder` containing an MDX file called `your-page.mdx`.
+- uses historical storage streams
+- aligns runtime time with replay scheduler
+- allows reproducible validations when window and inputs are fixed
 
-<Warning>
-
-You cannot use `api` for the name of a folder unless you nest it inside another folder. Mintlify uses Next.js which reserves the top-level `api` folder for internal server calls. A folder name such as `api-reference` would be accepted.
-
-</Warning>
-
-```json Navigation With Folder
-"navigation": {
-  "tabs": [
-    {
-      "tab": "Docs",
-      "groups": [
-        {
-          "group": "Group Name",
-          "pages": ["your-folder/your-page"]
-        }
-      ]
-    }
-  ]
-}
+```bash
+qf replay pipeline --from 2025-01-01 --to 2025-01-07 --id replay-week-1
 ```
 
-## Hidden pages
+For replay-safe code paths, use `useTimestamp` and replay-aware branching.
 
-MDX files not included in `docs.json` will not show up in the sidebar but are accessible through the search bar and by linking directly to them.
+## Live mode
+
+Use `live` only after paper + replay confidence gates pass.
+
+Typical characteristics:
+
+- production connectors and execution
+- real risk and real fills
+- optional recording for audit and analysis
+
+```bash
+qf live pipeline --id live-main --recording
+```
+
+## Mode-aware branching patterns
+
+`useSimulator(simulated, real)` picks simulated logic for any non-live run.
+
+`useReplay(backtest, real)` picks backtest logic only in replay mode.
+
+```ts
+import { useReplay, useSimulator } from '@quantform/core';
+
+const orderExecutor = useSimulator(simulatedExecutor, liveExecutor);
+const marketSource = useReplay(historicalSource, realtimeSource);
+```
+
+Use this approach to keep strategy orchestration stable while switching execution internals per mode.
+
+## Recommended promotion flow
+
+1. Build logic in `paper` mode.
+2. Validate deterministically in `replay` mode on targeted windows.
+3. Promote to `live` with explicit session ID and recording where needed.
+4. Keep mode branching explicit and minimal to reduce divergence.
+
+## Common mistakes
+
+- Using `Date.now()` instead of `useTimestamp` in replay-sensitive logic
+- Mixing live side effects into replay code paths
+- Skipping paper/replay validation before live rollout
+- Over-branching strategy flow by mode instead of branching only execution edges
