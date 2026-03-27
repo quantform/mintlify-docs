@@ -7,7 +7,6 @@
     "light": "#03D0EB",
     "dark": "#03D0EB"
   },
-  "anchor": false,
   "favicon": {
     "light": "/images/favicon.ico",
     "dark": "/images/favicon.ico"
@@ -19,6 +18,13 @@
         "pages": [
           "index",
           "quickstart"
+        ]
+      },
+      {
+        "group": "Use Cases",
+        "pages": [
+          "ai-tools/cursor",
+          "ai-tools/claude-code"
         ]
       },
       {
@@ -37,13 +43,6 @@
           "essentials/images",
           "essentials/reusable-snippets"
         ]
-      },
-      {
-        "group": "Strategies",
-        "pages": [
-          "ai-tools/cursor",
-          "ai-tools/claude-code"
-        ]
       }
     ]
   },
@@ -57,12 +56,7 @@
         "label": "GitHub",
         "href": "https://github.com/quantform/quantform"
       }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "GitHub",
-      "href": "https://github.com/quantform/quantform"
-    }
+    ]
   },
   "contextual": {
     "options": [
