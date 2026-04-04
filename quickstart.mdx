@@ -139,7 +139,7 @@ The sections below step through the strategy implementation: live feed, replay s
 ```ts
 export function watchTradeLive(symbol: string) {
   const { watch } = useSocket(
-    `wss://fstream.binance.com/stream?streams=${symbol.toLowerCase()}@trade`
+    `wss://stream.binance.com/stream?streams=${symbol.toLowerCase()}@trade`
   );
 
   return watch().pipe(
@@ -157,7 +157,9 @@ export function watchTradeLive(symbol: string) {
 
 ### 2. Historical trades: `watchTradeReplay`
 
-[`watch-trade.replay.ts`](https://github.com/quantform/quantform/blob/main/packages/create/template/binance/watch-trade.replay.ts) uses **`useReplayStorage`** to manage historical data. The **`sync`** callback is invoked for the replay time range: it walks each day, downloads the Binance Vision **spot** daily trades ZIP for that symbol, parses CSV rows, and **`storage.save`**s normalized events. **`watch()`** then emits those events in timestamp order through the same `map` as live for a consistent payload shape.
+[`watch-trade.replay.ts`](https://github.com/quantform/quantform/blob/main/packages/create/template/binance/watch-trade.replay.ts) uses **`useReplayStorage`** to manage historical data. The **`sync`** callback is invoked for the replay time range: it walks each day, downloads the Binance Vision **spot** daily trades ZIP for that symbol, parses CSV rows, and **`storage.save`**s normalized events. 
+
+Then **`watch()`** emits events in timestamp order through the same `map` as live for a consistent payload shape.
 
 ```ts
 export function watchTradeReplay(symbol: string) {
@@ -177,8 +179,6 @@ export function watchTradeReplay(symbol: string) {
   );
 }
 ```
-
-The sample strategy uses **spot** for the live feed and **spot** Vision files for replay. For production work you would align venue and instrument; for learning the structure, the important part is the **split between live and replay implementations** and the **shared downstream shape**.
 
 ### 3. Execution mode: `useReplay`
 
@@ -218,13 +218,5 @@ Keeping **venue-specific** wiring behind **`useBinance()`** lets you **reuse** t
 
   <Card title="Composition" icon="puzzle-piece" href="/essentials/dependency-injection">
     Go deeper on hooks, tokens, and dependency wiring.
-  </Card>
-
-  <Card title="Settings" icon="sliders" href="/essentials/settings">
-    Configure documentation and workspace essentials used across pages.
-  </Card>
-
-  <Card title="Code blocks" icon="code" href="/essentials/code">
-    Mintlify conventions for examples and callouts in MDX.
   </Card>
 </CardGroup>
