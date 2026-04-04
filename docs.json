@@ -30,7 +30,7 @@
       {
         "group": "Fundamentals",
         "pages": [
-          "essentials/markdown",
+          "essentials/time",
           "essentials/dependency-injection",
           "essentials/settings",
           "essentials/navigation"

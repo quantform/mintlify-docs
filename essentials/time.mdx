@@ -1,0 +1,90 @@
+---
+title: "Time"
+description: "Use useTimestamp as the single source of truth for time"
+icon: "clock"
+---
+
+Quantform treats time as **64-bit integer timestamps in nanoseconds** (`bigint`) for storage, replay windows, and ordering. Sticking to **ns** end-to-end avoids drift between live runs and backtests.
+
+## Why nanoseconds
+
+- **Single precision** — Internal APIs (replay bounds, event ordering, storage queries) expect **`Timestamp<'ns'>`**. Values in other units are **tagged** (`'us' | 'ms' | 's'`) so you cannot mix units by accident.
+- **Conversion, not guessing** — Anything you read from the outside world (milliseconds from `Date`, microseconds from an exchange) should be wrapped with the right helper and **`convert(..., from, 'ns')`** before passing it into core that require ns.
+
+## `useTimestamp`: one clock for strategy code
+
+Call **`useTimestamp()`** when you need “now” inside code that must agree with **replay** and **live/paper**.
+
+It returns **`{ timestamp: Timestamp<'ns'> }`**:
+
+- **Live and paper** — Uses **`now()`**: wall time expressed in **nanoseconds**, stabilized with `process.hrtime` so the clock is monotonic within the process.
+- **Replay** — Uses the **replay scheduler’s** current sample time (the event being processed), **not** wall clock. That keeps logs, ordering, and time-based branches aligned with the backtest stream.
+
+Do **not** use **`Date.now()`** or **`new Date()`** for strategy semantics: in replay, wall clock has nothing to do with the simulated period.
+
+## Helpers: tag values and convert to ns
+
+From [`use-timestamp.ts`](https://github.com/quantform/quantform/blob/main/packages/core/src/use-timestamp.ts):
+
+| Helper | Meaning |
+| ------ | ------- |
+| **`ns(n)`**, **`us(n)`**, **`ms(n)`**, **`s(n)`** | Tag a `bigint` or `number` as that **unit** (not a conversion by itself). |
+| **`convert(value, from, to)`** | Scale between **`ns` / `us` / `ms` / `s`**. Use this to produce **`Timestamp<'ns'>`** for core APIs. |
+| **`add(a, b)`** | Add two timestamps **in the same unit**. |
+| **`now()`** | Wall-clock-aligned **nanoseconds** (when you need explicit time outside `useTimestamp`, still inside a valid runtime context). |
+
+**Example — milliseconds from JS → nanoseconds for an API that expects ns:**
+
+```ts
+import { convert, ms } from '@quantform/core';
+
+const wallMs = Date.now();
+const asNs = convert(ms(wallMs), 'ms', 'ns');
+```
+
+**Example — combine a duration in ns with a base in ns:**
+
+```ts
+import { add, ns } from '@quantform/core';
+
+const later = add(baseNsTimestamp, ns(1_000_000_000n)); // +1s in nanoseconds
+```
+
+## Replay and “backend” time
+
+Replay options (**`from` / `to`**) are **`Timestamp<'ns'>`**. The CLI builds those from date strings by converting wall-clock bounds into ns before **`run`**.
+
+While a replay is executing, **`useTimestamp().timestamp`** tracks the **current replay sample**, not the machine clock. Treat that as the **authoritative “current time”** for anything that should behave the same in live and replay.
+
+## Practical pattern
+
+Tag events with the replay-aware clock when the observation happens in your pipeline (must run under the module / strategy context):
+
+```ts
+import { map, type Observable } from 'rxjs';
+import { useTimestamp } from '@quantform/core';
+
+export function withEventTime<T>(source: Observable<T>) {
+  return source.pipe(
+    map(payload => {
+      const { timestamp } = useTimestamp();
+      return { timestamp, payload };
+    })
+  );
+}
+```
+
+If an external feed already carries an **exchange timestamp**, keep it for **market time**; use **`useTimestamp()`** when you need **run time** (when this node saw the event in this execution).
+
+## Summary
+
+| Context | What you get from `useTimestamp().timestamp` |
+| ------- | -------------------------------------------- |
+| Live / paper | Nanoseconds, wall-aligned via `now()` |
+| Replay | Nanoseconds for the **current replay event** |
+
+**Rule of thumb:** persist and compare in **ns**; convert **into** ns at system boundaries; use **`useTimestamp()`** anywhere strategy behavior depends on “now.”
+
+<Card title="Quickstart" icon="rocket" href="/quickstart">
+  See replay execution and npm scripts in the guided walkthrough.
+</Card>
