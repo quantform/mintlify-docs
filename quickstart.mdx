@@ -128,9 +128,11 @@ npm run replay
 
 ---
 
-**Technical walkthrough** — The sections below step through the strategy implementation: live feed, replay storage, switching live versus replay, venue hooks, and how they connect back to `app.ts`.
+## Technical walkthrough
 
-## 1. Real-time trades: `watchTradeLive`
+The sections below step through the strategy implementation: live feed, replay storage, switching live versus replay, venue hooks, and how they connect back to `app.ts`.
+
+### 1. Real-time trades: `watchTradeLive`
 
 [`watch-trade.live.ts`](https://github.com/quantform/quantform/blob/main/packages/create/template/binance/watch-trade.live.ts) uses **`useSocket`** to subscribe to Binance **spot** composite stream trades. Incoming messages are schema validated, retried on failure, and mapped to a normalized `{ timestamp, payload: { price, size } }` shape.
 
@@ -153,9 +155,9 @@ export function watchTradeLive(symbol: string) {
 
 `d(...)` builds decimal values suitable for precise math in the strategy layer.
 
-## 2. Historical trades: `watchTradeReplay`
+### 2. Historical trades: `watchTradeReplay`
 
-[`watch-trade.replay.ts`](https://github.com/quantform/quantform/blob/main/packages/create/template/binance/watch-trade.replay.ts) uses **`useReplayStorage`** with a stable **`uri`** (`binance://trade` + symbol). The **`sync`** callback is invoked for the replay time range: it walks each day, downloads the Binance Vision **spot** daily trades ZIP for that symbol, parses CSV rows, and **`storage.save`**s normalized events. **`watch()`** then emits those events in timestamp order through the same `map` as live for a consistent payload shape.
+[`watch-trade.replay.ts`](https://github.com/quantform/quantform/blob/main/packages/create/template/binance/watch-trade.replay.ts) uses **`useReplayStorage`** to manage historical data. The **`sync`** callback is invoked for the replay time range: it walks each day, downloads the Binance Vision **spot** daily trades ZIP for that symbol, parses CSV rows, and **`storage.save`**s normalized events. **`watch()`** then emits those events in timestamp order through the same `map` as live for a consistent payload shape.
 
 ```ts
 export function watchTradeReplay(symbol: string) {
@@ -178,7 +180,7 @@ export function watchTradeReplay(symbol: string) {
 
 The sample strategy uses **spot** for the live feed and **spot** Vision files for replay. For production work you would align venue and instrument; for learning the structure, the important part is the **split between live and replay implementations** and the **shared downstream shape**.
 
-## 3. Execution mode: `useReplay`
+### 3. Execution mode: `useReplay`
 
 [`watch-trade.ts`](https://github.com/quantform/quantform/blob/main/packages/create/template/binance/watch-trade.ts) delegates to **`useReplay(watchTradeReplay, watchTradeLive)`**. That helper reads **`useExecutionMode()`**: in **replay** runs it uses the first function; otherwise it uses the second (live/paper paths both use the “real-time” implementation).
 
@@ -193,7 +195,7 @@ export function watchTrade(symbol: string) {
 
 The **`qf paper`**, **`qf live`**, and **`qf replay`** commands each inject the appropriate execution mode and replay options when they call **`run`** on your default export.
 
-## 4. Venue composition: `useBinance`
+### 4. Venue composition: `useBinance`
 
 [`use-binance.ts`](https://github.com/quantform/quantform/blob/main/packages/create/template/binance/use-binance.ts) exposes a single object so strategy code does not import every low-level file:
 
