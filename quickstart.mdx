@@ -1,5 +1,5 @@
 ---
-description: "Scaffold a project, compose market streams with hooks, and run the same strategy in paper, live, or replay—without maintaining separate code paths."
+description: "Scaffold a project, compose market streams with hooks, and run the same strategy in paper, live, or replay."
 title: "Quickstart"
 icon: "rocket"
 ---
@@ -73,7 +73,9 @@ You will learn how to:
 
 ## Build the strategy
 
-Start from the entry [`app.ts`](https://github.com/quantform/quantform/blob/main/packages/create/template/app.ts). The first step is to define a **strategy hook**, your main entry, that **pulls in other hooks** and **turns their streams into signals** you can act on. In this walkthrough the strategy **listens to three Binance trade streams** (three symbols), **folds them into one combined stream** so you always see the latest prices together, and from that joint view **computes a spread** to surface **cross-market inefficiency**.
+Start from the entry [`app.ts`](https://github.com/quantform/quantform/blob/main/packages/create/template/app.ts). The first step is to define a **strategy hook**, your main entry, that **pulls in other hooks** and **turns their streams into signals** you can act on. 
+
+In this walkthrough the strategy **listens to three Binance trade streams** (three symbols), **folds them into one combined stream** so you always see the latest prices together, and from that joint view **computes a spread** to surface **cross-market inefficiency**.
 
 ```ts
 export function triangularArbitrageInefficiency() {
