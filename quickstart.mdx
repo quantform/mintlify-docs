@@ -1,122 +1,226 @@
 ---
-description: "Install Quantform Core and execute your first reusable strategy component."
+description: "Scaffold a project, compose market streams with hooks, and run the same strategy in paper, live, or replay—without maintaining separate code paths."
 title: "Quickstart"
 icon: "rocket"
 ---
 
-This tutorial walks you through:
+This guide is about **getting oriented**, not about a particular trading idea. You will **scaffold a project**, then step through how market data becomes **streams of updates**, how **hooks** plug together, and how **one strategy** can run in **paper**, **live**, or **replay** mode.
 
-1. Installing `@quantform/core`
-2. Creating a basic reusable component
-3. Wiring it into a strategy
-4. Executing it with the Quantform CLI
+## What this walkthrough covers
 
-## Prerequisites
+You will learn how to:
 
-- Node.js and Yarn installed
-- A new or existing TypeScript project
+- **Define a strategy** as streams of events instead of manual polling loops.
+- **Combine streams** so derived values (“signals”) refresh whenever any input changes.
+- **Run on live venue data** real-time feeds, with reconnect/retry so the pipeline survives network hiccups.
+- **Backtest on stored history**: fetch, persist, replay; **same codebase** as live, no forked project.
+- **Hooks and composition**—bundle connections, storage, and logging once; reuse them and keep strategy files small.
+
+<Warning>
+  The sample uses **Binance**: live streams come from Binance’s public market feed, and replay pulls **historical trades from Binance Vision**. Those downloads can be **large**; the first sync for a wide date range may take noticeable time and bandwidth while data is fetched and stored.
+</Warning>
+
+---
+
+## Create the project
+
+### Prerequisites
+
+- Node.js and **npm** (the scaffold uses `npm` to install dependencies).
+- Network access when you run **live** or when **replay** syncs historical files from remote archives.
+
+<Steps>
+<Step title="Scaffold a new folder">
+  Run the create tool with your project directory name (replace `my-strategy` if you like):
+
+  ```bash
+  npx @quantform/create my-strategy
+  ```
+
+  The CLI expects that folder name as its argument.
+</Step>
+
+<Step title="Open the project">
+  ```bash
+  cd my-strategy
+  ```
+</Step>
+
+<Step title="Check the layout">
+  You should see a `src/` tree like:
+
+  ```text
+  src/
+    app.ts                         # app entry: wires storage and starts your strategy function
+    binance/
+      use-binance.ts               # venue hook: bundles trade streams behind one API
+      watch-trade.ts               # chooses live vs replay, maps events to price stream
+      watch-trade.live.ts          # real-time trades from the public market feed
+      watch-trade.replay.ts        # historical trades: sync into storage, replay in order
+  ```
+</Step>
+
+<Step title="Use the npm scripts">
+  The generated `package.json` includes scripts such as:
+
+  - **`npm run start`** — paper / simulation run (non-live execution mode).
+  - **`npm run live`** — live run with a real-time market feed.
+  - **`npm run replay`** — backtest-style run over a date range (from / to are set in the script).
+</Step>
+</Steps>
+
+---
+
+## Build the strategy
+
+Start from the entry [`app.ts`](https://github.com/quantform/quantform/blob/main/packages/create/template/app.ts). The first step is to define a **strategy hook**, your main entry, that **pulls in other hooks** and **turns their streams into signals** you can act on. In this walkthrough the strategy **listens to three Binance trade streams** (three symbols), **folds them into one combined stream** so you always see the latest prices together, and from that joint view **computes a spread** to surface **cross-market inefficiency**.
 
 ```ts
-/*
- * Combines funding rates from multiple venues into a single stream 
- * and computes the funding fee premium between them.
- */
-export function watchFundingPremium(symbol = 'SOL') {
-  const { watchHyperliquidFundingFee } = useHyperliquid();
-  const { watchBackpackFundingFee } = useBackpack();
+export function triangularArbitrageInefficiency() {
+  const { watchTrade } = useBinance();
+  const { info } = useLogger('arbitrage');
 
   return combineLatest([
-    watchHyperliquidFundingFee(symbol),
-    watchBackpackFundingFee(`${symbol}_USD_PERP`),
+    watchTrade('btcusdc'),
+    watchTrade('ethusdc'),
+    watchTrade('ethbtc')
   ]).pipe(
-    map(([hl, bp]) => hl.rate - bp.rate)
+    tap(([btcusdc, ethusdc, ethbtc]) => {
+      const spread = ethusdc.div(btcusdc).sub(ethbtc).abs();
+
+      info(`spread: ${spread.toFixed(6)}`);
+    })
   );
 }
 ```
 
-## Step 1: Install packages
-
-```bash
-yarn add @quantform/core rxjs
-```
-
-Create a `src` directory if you do not already have one.
-
-## Step 2: Create a basic component
-
-Create `src/components/tick-logger.ts`:
+The second half of [`app.ts`](https://github.com/quantform/quantform/blob/main/packages/create/template/app.ts) **registers modules**, exposes the **entry handle**, and **binds** your strategy to the runtime:
 
 ```ts
-import { interval, map, tap } from 'rxjs';
-import { useLogger } from '@quantform/core';
+export default app().use(sqlite()).start(triangularArbitrageInefficiency);
+```
 
-/**
- * Basic reusable component:
- * emits one tick event per second and logs it.
- */
-export function useTickLogger(label: string) {
-  const { info } = useLogger('tick-logger');
+- **`app()`** creates the base runtime and its **default dependency graph** (logging, execution context, in-memory storage factory, and other services hooks expect).
+- **`.use(sqlite())`** **registers** the SQLite-backed module so persistence-backed parts of the strategy resolve storage through the same graph.
+- **`.start(triangularArbitrageInefficiency)`** **binds** the strategy function to the runner: the runtime invokes it and **drives** the **main stream** it returns—your **strategy entry** tied to the running process.
 
-  return interval(1000).pipe(
-    map(i => ({ timestamp: Date.now(), label, tick: i })),
-    tap(event => info(`[${event.label}] tick=${event.tick}`))
+---
+
+## Strategy execution: live & replay
+
+**Live** — **Command** (project root):
+
+```bash
+npm run live
+```
+
+**Expect** — The **live** script drives the feed. For **BTCUSDC**, **ETHUSDC**, and **ETHBTC**, each update **recomputes** the spread and **prints** one log line (values follow the live market).
+
+**Replay (backtest)** — **Command** (project root). Change **`from` / `to`** in `package.json` if you need another window:
+
+```bash
+npm run replay
+```
+
+**Expect** — **First run** for a range: fetch historical trades from **external** sources, **persist** them, then **replay** in time order through the **same** strategy. **Output** matches live: **spread** lines from **stored** history. **First sync** can take longer while downloads finish.
+
+---
+
+**Technical walkthrough** — The sections below step through the strategy implementation: live feed, replay storage, switching live versus replay, venue hooks, and how they connect back to `app.ts`.
+
+## 1. Real-time trades: `watchTradeLive`
+
+[`watch-trade.live.ts`](https://github.com/quantform/quantform/blob/main/packages/create/template/binance/watch-trade.live.ts) uses **`useSocket`** to subscribe to Binance **spot** composite stream trades. Incoming messages are schema validated, retried on failure, and mapped to a normalized `{ timestamp, payload: { price, size } }` shape.
+
+```ts
+export function watchTradeLive(symbol: string) {
+  const { watch } = useSocket(
+    `wss://fstream.binance.com/stream?streams=${symbol.toLowerCase()}@trade`
+  );
+
+  return watch().pipe(
+    retry(),
+    map(({ timestamp, payload }) => {
+      const { data } = schema.parse(payload);
+
+      return { timestamp, payload: { price: d(data.p), size: d(data.q) } };
+    })
   );
 }
 ```
 
-## Step 3: Use the component in a strategy
+`d(...)` builds decimal values suitable for precise math in the strategy layer.
 
-Create `src/pipeline.ts`:
+## 2. Historical trades: `watchTradeReplay`
+
+[`watch-trade.replay.ts`](https://github.com/quantform/quantform/blob/main/packages/create/template/binance/watch-trade.replay.ts) uses **`useReplayStorage`** with a stable **`uri`** (`binance://trade` + symbol). The **`sync`** callback is invoked for the replay time range: it walks each day, downloads the Binance Vision **spot** daily trades ZIP for that symbol, parses CSV rows, and **`storage.save`**s normalized events. **`watch()`** then emits those events in timestamp order through the same `map` as live for a consistent payload shape.
 
 ```ts
-import { behavior, strategy } from '@quantform/core';
-import { useTickLogger } from './components/tick-logger';
+export function watchTradeReplay(symbol: string) {
+  const { watch } = useReplayStorage(uri(`binance://trade`, { symbol }), {
+    sync: async (query, storage) => {
+      const { min, max } = query.where.timestamp;
+      // ... iterate days, fetch ZIP, parse rows, await storage.save([...])
+    }
+  });
 
-export default strategy(() => {
-  behavior(() => useTickLogger('basic-component'));
+  return watch().pipe(
+    map(({ timestamp, payload }) => {
+      const { 1: price, 2: quantity } = schema.parse(payload);
 
-  return [];
-});
+      return { timestamp, payload: { price: d(price), size: d(quantity) } };
+    })
+  );
+}
 ```
 
-This keeps your strategy small while moving reusable logic into a component.
+The sample strategy uses **spot** for the live feed and **spot** Vision files for replay. For production work you would align venue and instrument; for learning the structure, the important part is the **split between live and replay implementations** and the **shared downstream shape**.
 
-## Step 4: Execute the strategy
+## 3. Execution mode: `useReplay`
 
-Run in paper mode:
+[`watch-trade.ts`](https://github.com/quantform/quantform/blob/main/packages/create/template/binance/watch-trade.ts) delegates to **`useReplay(watchTradeReplay, watchTradeLive)`**. That helper reads **`useExecutionMode()`**: in **replay** runs it uses the first function; otherwise it uses the second (live/paper paths both use the “real-time” implementation).
 
-```bash
-qf paper pipeline
+```ts
+export function watchTrade(symbol: string) {
+  return useReplay(
+    watchTradeReplay,
+    watchTradeLive
+  )(symbol).pipe(map(it => it.payload.price));
+}
 ```
 
-You should see a log line every second from `useTickLogger`.
+The **`qf paper`**, **`qf live`**, and **`qf replay`** commands each inject the appropriate execution mode and replay options when they call **`run`** on your default export.
 
-## Step 5: Iterate quickly
+## 4. Venue composition: `useBinance`
 
-Use watch mode while developing:
+[`use-binance.ts`](https://github.com/quantform/quantform/blob/main/packages/create/template/binance/use-binance.ts) exposes a single object so strategy code does not import every low-level file:
 
-```bash
-qf paper pipeline -w
+```ts
+export function useBinance() {
+  return {
+    watchTrade
+  };
+}
 ```
 
-The process restarts when files in `src` change.
+Keeping **venue-specific** wiring behind **`useBinance()`** lets you **reuse** the same Binance implementation in **other strategies** without copying imports or stream setup.
 
 ## Next steps
 
 <CardGroup cols={2}>
-  <Card title="Execution modes" icon="toggle-on" href="/guides/execution-modes">
-    Learn when to use paper, replay, and live runs.
+  <Card title="Overview" icon="book-open" href="/">
+    Return to the product overview and execution model summary.
   </Card>
 
-  <Card title="Replay workflow" icon="clock-rotate-left" href="/guides/replay-workflow">
-    Validate strategy behavior with historical windows.
+  <Card title="Composition" icon="puzzle-piece" href="/essentials/dependency-injection">
+    Go deeper on hooks, tokens, and dependency wiring.
   </Card>
 
-  <Card title="Runtime model" icon="layer-group" href="/concepts/runtime-model">
-    Understand modules, hooks context, and dependency wiring.
+  <Card title="Settings" icon="sliders" href="/essentials/settings">
+    Configure documentation and workspace essentials used across pages.
   </Card>
 
-  <Card title="Quickstart" icon="rocket" href="/quickstart">
-    Compare this tutorial with the shorter quickstart path.
+  <Card title="Code blocks" icon="code" href="/essentials/code">
+    Mintlify conventions for examples and callouts in MDX.
   </Card>
 </CardGroup>
